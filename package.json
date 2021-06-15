@@ -1,0 +1,34 @@
+{
+  "name": "hapi-plugin-graphql",
+  "version": "0.1.0",
+  "description": "",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "prebuild": "rimraf lib",
+    "build": "tsc",
+    "test": "lab -v -l -P .spec lib"
+  },
+  "keywords": [],
+  "author": "Joshua Avalon",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@hapi/code": "^8.0.3",
+    "@hapi/hapi": "^20.1.4",
+    "@hapi/lab": "^24.2.1",
+    "@joshuaavalon/eslint-config-typescript": "^4.5.6",
+    "@types/content-type": "^1.1.3",
+    "@types/node": "^15.12.2",
+    "eslint": "^7.28.0",
+    "prettier": "^2.3.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.3.2"
+  },
+  "dependencies": {
+    "@hapi/boom": "^9.1.2",
+    "@types/hapi__hapi": "^20.0.8",
+    "content-type": "^1.0.4",
+    "get-stream": "^6.0.1",
+    "graphql": "^15.0.0"
+  }
+}

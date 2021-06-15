@@ -1,0 +1,10 @@
+extends:
+  - "@joshuaavalon/eslint-config-typescript"
+env:
+  es6: true
+  node: true
+overrides:
+  - files:
+      - "**/*.js"
+    rules:
+      "@typescript-eslint/explicit-function-return-type": "off"
