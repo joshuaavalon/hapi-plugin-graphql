@@ -12,7 +12,12 @@ export const plugin: Plugin<Options> = {
       method,
       path,
       handler: route(graphql),
-      options: { payload: { parse: "gunzip" } },
+      options: {
+        payload: {
+          parse: "gunzip",
+          allow: ["application/json", "application/graphql"]
+        }
+      },
       ...others
     });
   }
