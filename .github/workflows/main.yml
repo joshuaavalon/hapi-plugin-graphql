@@ -6,7 +6,8 @@ jobs:
   test:
     name: Build script
     runs-on: ubuntu-latest
-    container: node:lts
+    container:
+      image: node:lts
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -14,8 +15,6 @@ jobs:
         run: npm install -g npm@latest
       - name: Install script dependencies
         run: npm ci
-      - name: chmod
-        run: chmod -R 777 .
       - name: Build
         run: npm run build
       - name: Run unit tests
