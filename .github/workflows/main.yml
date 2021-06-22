@@ -3,19 +3,54 @@ on:
   - push
   - pull_request
 jobs:
-  test:
-    name: Build script
+  build:
+    name: build project
     runs-on: ubuntu-latest
     container:
       image: node:lts
     steps:
-      - name: Checkout
+      - name: checkout source code
         uses: actions/checkout@v2
-      - name: Install npm@7
+      - name: install latest version npm
         run: npm install -g npm@latest
-      - name: Install script dependencies
+      - name: install dependencies
         run: npm ci
-      - name: Build
+      - name: build project
         run: npm run build
-      - name: Run unit tests
+      - uses: actions/upload-artifact@v2
+        with:
+          name: hapi-plugin-graphql
+          path: lib/
+  test:
+    name: test project
+    needs: build
+    runs-on: ubuntu-latest
+    container:
+      image: node:lts
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v2
+      - name: install latest version npm
+        run: npm install -g npm@latest
+      - name: install dependencies
+        run: npm ci
+      - uses: actions/download-artifact@v2
+        with:
+          name: hapi-plugin-graphql
+          path: lib/
+      - name: test project
         run: npm run test
+  lint:
+    name: lint project
+    runs-on: ubuntu-latest
+    container:
+      image: node:lts
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v2
+      - name: install latest version npm
+        run: npm install -g npm@latest
+      - name: install dependencies
+        run: npm ci
+      - name: lint project
+        run: npm run lint
