@@ -8,19 +8,18 @@ import type {
   GraphQLTypeResolver,
   ValidationRule
 } from "graphql";
-import type { Request, RouteOptions, RouteOptionsCors, Util } from "@hapi/hapi";
+import type { Request, RouteOptions, ServerRoute } from "@hapi/hapi";
 
 type MaybePromise<T> = Promise<T> | T;
 
 export type Options = {
-  method?: Util.HTTP_METHODS_PARTIAL | Util.HTTP_METHODS_PARTIAL[];
+  method?: ServerRoute["method"];
   /**
    * Path of the Graphql API. Default to "/graphql".
    */
   path?: string;
   vhost?: string;
   route?: RouteOptions;
-  cors?: boolean | RouteOptionsCors;
   graphql:
     | ((
         request: Request,
