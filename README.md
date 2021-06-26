@@ -1,6 +1,8 @@
 # hapi-plugin-graphql
 
-[![license][license_badge]][license][![npm][npm_badge]][npm] [![semantic-release][semantic_release_badge]][semantic_release] ![GitHub Sponsors][sponsors]
+[![license][license_badge]][license] [![npm][npm_badge]][npm] [![semantic-release][semantic_release_badge]][semantic_release] [![GitHub Sponsors][sponsors_badge]][sponsors]
+
+Graphql plugin for Hapi
 
 ```
 npm i hapi-plugin-graphql
@@ -52,4 +54,5 @@ For example,
 [npm_badge]: https://img.shields.io/npm/v/hapi-plugin-graphql
 [github]: https://github.com/joshuaavalon/hapi-plugin-graphql/actions/workflows/main.yml
 [github_badge]: https://github.com/joshuaavalon/hapi-plugin-graphql/actions/workflows/main/badge.svg
-[sponsors]: https://img.shields.io/github/sponsors/joshuaavalon
+[sponsors]: https://github.com/sponsors/joshuaavalon
+[sponsors_badge]: https://img.shields.io/github/sponsors/joshuaavalon
