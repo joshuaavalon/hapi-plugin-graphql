@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: node:lts-buster
-      options:
-        user: 1001:121
+      options: --user 1001:121
     steps:
       - name: checkout source code
         uses: actions/checkout@v2
