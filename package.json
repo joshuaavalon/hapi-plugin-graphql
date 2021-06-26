@@ -8,11 +8,19 @@
     "prebuild": "rimraf lib",
     "build": "tsc",
     "test": "lab -v -l -P .spec lib",
-    "lint": "eslint --ext .ts src"
+    "lint": "eslint --ext .ts src",
+    "semantic-release": "semantic-release"
   },
-  "keywords": [],
+  "keywords": [
+    "hapi",
+    "graphql"
+  ],
   "author": "Joshua Avalon",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshuaavalon/hapi-plugin-graphql.git"
+  },
   "devDependencies": {
     "@hapi/code": "^8.0.3",
     "@hapi/hapi": "^20.1.4",

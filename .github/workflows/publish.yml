@@ -1,0 +1,25 @@
+name: publish
+on:
+  push:
+    branches:
+      - master
+jobs:
+  publish:
+    name: publish npm
+    runs-on: ubuntu-latest
+    container:
+      image: node:lts
+    steps:
+      - name: checkout source code
+        uses: actions/checkout@v2
+      - name: install latest version npm
+        run: npm install -g npm@latest
+      - name: install dependencies
+        run: npm ci
+      - name: build project
+        run: npm run build
+      - name: publish npm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
