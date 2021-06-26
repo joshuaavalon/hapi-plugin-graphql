@@ -2,7 +2,7 @@ name: publish
 on:
   push:
     branches:
-      - development
+      - master
 jobs:
   publish:
     name: publish npm
@@ -24,4 +24,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: ls -la && npx semantic-release --dry-run
+        run: ls -la && npx semantic-release
