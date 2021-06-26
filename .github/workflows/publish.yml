@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: node:lts-buster
+      options:
+        user: 1001:121
     steps:
-      - name: add git
-        run: apt-get update && apt-get install -y git
       - name: checkout source code
         uses: actions/checkout@v2
       - name: install latest version npm
