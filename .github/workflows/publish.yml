@@ -13,7 +13,7 @@ jobs:
       - name: checkout source code
         uses: actions/checkout@v2
       - name: setup permission
-        uses: chown -R 1001:121 .
+        run: chown -R 1001:121 .
       - name: install latest version npm
         run: npm install -g npm@latest
       - name: install dependencies
