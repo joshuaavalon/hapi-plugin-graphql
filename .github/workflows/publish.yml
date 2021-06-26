@@ -11,7 +11,7 @@ jobs:
       image: node:lts
     steps:
       - name: add git
-        uses: apt-get update && apt-get install -y git
+        run: apt-get update && apt-get install -y git
       - name: checkout source code
         uses: actions/checkout@v2
       - name: install latest version npm
