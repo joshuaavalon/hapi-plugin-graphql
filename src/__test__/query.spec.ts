@@ -20,7 +20,7 @@ export const lab = script();
 
 const { after, before, describe, test } = lab;
 
-describe("graphql", () => {
+describe("query", () => {
   let app: Server;
 
   before(async () => {

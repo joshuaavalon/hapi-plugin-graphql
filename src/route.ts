@@ -11,7 +11,7 @@ import {
 } from "graphql";
 
 import { getGraphQLParams } from "./parse-request";
-import { graphqlError, isGraphQLError } from "./error";
+import { graphqlError } from "./error";
 
 import type { Lifecycle, Request } from "@hapi/hapi";
 import type {
@@ -156,9 +156,6 @@ export const route =
         statusCode = (e as any).status ?? (e as any).statusCode ?? 500;
       }
       result = { data: undefined, errors: [e] };
-      if (isGraphQLError(e)) {
-        result.extensions = e.extensions;
-      }
     }
     // If no data was included in the result, that indicates a runtime query
     // error, indicate as such with a generic status code.
