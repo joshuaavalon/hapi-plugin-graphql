@@ -58,8 +58,9 @@ describe("error", () => {
     });
     expect(res.statusCode, "statusCode").to.equal(400);
     const { errors } = JSON.parse(res.payload);
-    console.log(res.payload);
-    expect(errors[0].message, "error message").to.equal("GraphQL syntax error");
+    expect(errors.length).greaterThan(0);
+    const error = errors[0];
+    expect(error?.message, "error message").to.equal("GraphQL syntax error");
   });
 
   test("extensions", async () => {
@@ -73,7 +74,10 @@ describe("error", () => {
     });
     expect(res.statusCode, "statusCode").to.equal(200);
     const { errors } = JSON.parse(res.payload);
-    expect(errors[0].message, "error message").to.equal("hello");
-    expect(errors[0].extensions.code, "extensions").to.equal("world");
+    expect(errors).to.be.array();
+    expect(errors.length).greaterThan(0);
+    const error = errors[0];
+    expect(error?.message, "error message").to.equal("hello");
+    expect(error?.extensions?.code, "extensions").to.equal("world");
   });
 });
