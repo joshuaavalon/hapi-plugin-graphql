@@ -83,6 +83,11 @@ export interface GraphqlOptions {
    * `__typename` field or alternatively calls the `isTypeOf` method).
    */
   typeResolver?: GraphQLTypeResolver<unknown, unknown>;
+  /**
+   * Return 200 status code even on error. This is common behavior for most GraphQL server.
+   * Default to true.
+   */
+  okStatusOnError?: boolean;
 }
 
 export interface GraphQLParams {

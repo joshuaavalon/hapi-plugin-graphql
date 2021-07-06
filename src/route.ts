@@ -1,70 +1,68 @@
-import { badImplementation, badRequest, boomify, internal } from "@hapi/boom";
+import { isBoom } from "@hapi/boom";
 import {
   execute,
   formatError,
-  GraphQLError,
+  GraphQLSchema,
   parse,
   Source,
   specifiedRules,
   validate,
   validateSchema
 } from "graphql";
-import { parseBody } from "./parse-body";
+
+import { getGraphQLParams } from "./parse-request";
+import { graphqlError } from "./error";
 
 import type { Lifecycle, Request } from "@hapi/hapi";
 import type {
   DocumentNode,
   ExecutionResult,
-  FormattedExecutionResult
+  FormattedExecutionResult,
+  ValidationRule
 } from "graphql";
 import type { GraphqlOptions, GraphQLParams, Options } from "./type";
-
-const getGraphQLParams = async (request: Request): Promise<GraphQLParams> => {
-  const { query: urlData } = request;
-  const bodyData = await parseBody(request);
-
-  // GraphQL Query string.
-  let query: string | null = urlData["query"] ?? bodyData.query;
-
-  if (typeof query !== "string") {
-    query = null;
-  }
-
-  // Parse the variables if needed.
-  let variables = (urlData["variables"] ?? bodyData.variables) as {
-    readonly [name: string]: unknown;
-  } | null;
-  if (typeof variables === "string") {
-    try {
-      variables = JSON.parse(variables);
-    } catch {
-      throw badRequest("Variables are invalid JSON.");
-    }
-  } else if (typeof variables !== "object") {
-    variables = null;
-  }
-
-  // Name of GraphQL operation to execute.
-  let operationName =
-    urlData["operationName"] ?? (bodyData.operationName as string | null);
-  if (typeof operationName !== "string") {
-    operationName = null;
-  }
-
-  const raw = urlData["raw"] !== null || bodyData.raw !== undefined;
-
-  return { query, variables, operationName, raw };
-};
 
 const resolveOptions = async (
   options: Options["graphql"],
   request: Request,
   requestParams?: GraphQLParams
-): Promise<GraphqlOptions> => {
-  const optionsResult = await Promise.resolve(
-    typeof options === "function" ? options(request, requestParams) : options
-  );
-  return optionsResult;
+): Promise<GraphqlOptions> =>
+  typeof options === "function" ? options(request, requestParams) : options;
+
+const validateGraphQLSchema = (schema: GraphQLSchema): void => {
+  const validationErrors = validateSchema(schema);
+  if (validationErrors.length > 0) {
+    // Return 500: Internal Server Error if invalid schema.
+    throw graphqlError(500, "Invalid GraphQL schema", undefined, {
+      validationErrors
+    });
+  }
+};
+
+const parseQuery = (query: string): DocumentNode => {
+  try {
+    return parse(new Source(query, "request"));
+  } catch (e) {
+    // Return 400: Bad Request if any syntax errors errors exist.
+    throw graphqlError(400, "GraphQL syntax error", e);
+  }
+};
+
+const validateDocumentAST = (
+  schema: GraphQLSchema,
+  documentAST: DocumentNode,
+  validationRules: readonly ValidationRule[]
+): void => {
+  const validationErrors = validate(schema, documentAST, [
+    ...specifiedRules,
+    ...validationRules
+  ]);
+  if (validationErrors.length > 0) {
+    // Return 400: Bad Request if any validation errors exist.
+    throw graphqlError(400, "Invalid GraphQL", undefined, {
+      validationErrors
+    });
+  }
 };
 
 export const route =
@@ -74,14 +72,16 @@ export const route =
     let formatErrorFn = formatError;
     let result: ExecutionResult;
     let statusCode = 200;
+    let okStatusOnError = true;
     try {
       try {
         params = await getGraphQLParams(request);
-      } catch (error: unknown) {
+      } catch (error) {
         // When we failed to parse the GraphQL parameters, we still need to get
         // the options object, so make an options call to resolve just that.
         const optionsData = await resolveOptions(options, request);
         formatErrorFn = optionsData.customFormatErrorFn ?? formatErrorFn;
+        okStatusOnError = optionsData.okStatusOnError ?? okStatusOnError;
         throw error;
       }
       const { server } = request;
@@ -93,8 +93,10 @@ export const route =
         fieldResolver,
         typeResolver,
         extensions: extensionsFn,
-        context = { request, h, server }
+        context = { request, h, server },
+        okStatusOnError: okStatusOnErrorUser = true
       } = optionsData;
+      okStatusOnError = okStatusOnErrorUser;
       formatErrorFn = optionsData.customFormatErrorFn ?? formatErrorFn;
 
       const { query, variables, operationName } = params;
@@ -102,41 +104,17 @@ export const route =
       // If there is no query, but GraphiQL will be displayed, do not produce
       // a result, otherwise return a 400: Bad Request.
       if (query === null) {
-        throw badRequest("Must provide query string.");
+        throw graphqlError(400, "Missing query");
       }
 
       // Validate Schema
-      const schemaValidationErrors = validateSchema(schema);
-      if (schemaValidationErrors.length > 0) {
-        // Return 500: Internal Server Error if invalid schema.
-        throw badImplementation("GraphQL schema validation error.", {
-          graphqlErrors: schemaValidationErrors
-        });
-      }
+      validateGraphQLSchema(schema);
 
       // Parse source to AST, reporting any syntax error.
-      let documentAST: DocumentNode;
-      try {
-        documentAST = parse(new Source(query, "GraphQL request"));
-      } catch (syntaxError: unknown) {
-        // Return 400: Bad Request if any syntax errors errors exist.
-        throw badRequest("GraphQL syntax error.", {
-          graphqlErrors: [syntaxError]
-        });
-      }
+      const documentAST = parseQuery(query);
 
       // Validate AST, reporting any errors.
-      const validationErrors = validate(schema, documentAST, [
-        ...specifiedRules,
-        ...validationRules
-      ]);
-
-      if (validationErrors.length > 0) {
-        // Return 400: Bad Request if any validation errors exist.
-        throw badRequest("GraphQL validation error.", {
-          graphqlErrors: validationErrors
-        });
-      }
+      validateDocumentAST(schema, documentAST, validationRules);
 
       // Perform the execution, reporting any errors creating the context.
       try {
@@ -150,11 +128,9 @@ export const route =
           fieldResolver,
           typeResolver
         });
-      } catch (contextError: unknown) {
+      } catch (e) {
         // Return 400: Bad Request if any execution context errors exist.
-        throw badRequest("GraphQL execution context error.", {
-          graphqlErrors: [contextError]
-        });
+        throw graphqlError(400, "Failed to execute GraphQL", e);
       }
 
       // Collect and apply any metadata extensions if a function was provided.
@@ -172,24 +148,14 @@ export const route =
           result = { ...result, extensions };
         }
       }
-    } catch (rawError: unknown) {
-      // If an error was caught, report the httpError status, or 500.
-      statusCode =
-        (rawError as any).status ?? (rawError as any).statusCode ?? 500;
-      const error =
-        rawError instanceof Error
-          ? boomify(rawError, { statusCode })
-          : internal(String(rawError));
-
-      const graphqlError = new GraphQLError(
-        error.message,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        error
-      );
-      result = { data: undefined, errors: [graphqlError] };
+    } catch (e) {
+      if (isBoom(e)) {
+        statusCode = e.output.statusCode;
+      } else {
+        // If an error was caught, report the httpError status, or 500.
+        statusCode = (e as any).status ?? (e as any).statusCode ?? 500;
+      }
+      result = { data: undefined, errors: [e] };
     }
     // If no data was included in the result, that indicates a runtime query
     // error, indicate as such with a generic status code.
@@ -206,5 +172,8 @@ export const route =
       errors: result.errors?.map(formatErrorFn)
     };
 
-    return h.response(formattedResult).type("application/json");
+    return h
+      .response(formattedResult)
+      .type("application/json")
+      .code(okStatusOnError ? 200 : statusCode);
   };
